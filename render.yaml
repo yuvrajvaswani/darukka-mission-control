@@ -1,0 +1,66 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy with: connect this repo in Render dashboard → "New Blueprint Instance"
+#
+# NOTE: PostGIS extensions require Render's Starter plan or higher.
+#       For the free tier use Supabase (free PostGIS) and paste the
+#       connection string as DATABASE_URL below.
+
+services:
+  # ── Backend (FastAPI + Gunicorn/Uvicorn) ─────────────────────────────────
+  - type: web
+    name: darukaa-backend
+    runtime: python
+    region: oregon          # change to: frankfurt, singapore, ohio, virginia
+    plan: free              # upgrade to starter for always-on + PostGIS
+    rootDir: backend
+
+    buildCommand: pip install -r requirements.txt
+
+    # Run Alembic migrations before the new version receives traffic.
+    # Render calls preDeployCommand once after build, before the new instance starts.
+    preDeployCommand: alembic upgrade head
+
+    startCommand: gunicorn -c gunicorn.conf.py app.main:app
+
+    healthCheckPath: /health
+
+    envVars:
+      # ── Required — set these in the Render dashboard (not here) ──────────
+      - key: DATABASE_URL
+        sync: false           # "sync: false" = must be set manually in dashboard
+
+      - key: CORS_ORIGINS
+        sync: false           # e.g.  ["https://darukaa.vercel.app"]
+
+      # ── Auto-generated ────────────────────────────────────────────────────
+      - key: SECRET_KEY
+        generateValue: true   # Render generates a secure random value
+
+      # ── Fixed values ──────────────────────────────────────────────────────
+      - key: DEBUG
+        value: "false"
+
+      - key: PYTHONPATH
+        value: /opt/render/project/src/backend
+
+      - key: LOG_LEVEL
+        value: info
+
+      - key: WEB_CONCURRENCY
+        value: "1"            # increase to 2+ on paid plans
+
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+
+# ── Optional: Render-managed PostgreSQL ──────────────────────────────────────
+# Uncomment to provision a Render PostgreSQL database.
+# Free tier: no PostGIS. Starter+ required for PostGIS extensions.
+# After provisioning, copy the "Internal Database URL" into DATABASE_URL above.
+#
+# databases:
+#   - name: darukaa-db
+#     databaseName: darukaa
+#     user: darukaa
+#     plan: starter          # starter required for PostGIS
+#     region: oregon
+#     postgresMajorVersion: "16"

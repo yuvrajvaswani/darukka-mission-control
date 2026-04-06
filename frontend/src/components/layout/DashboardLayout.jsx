@@ -1,0 +1,98 @@
+import { useState } from 'react'
+import { Outlet } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import AppSidebar from './AppSidebar'
+
+function TopBar() {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+  const [showMenu, setShowMenu] = useState(false)
+
+  return (
+    <header className="h-14 bg-surface-800/80 border-b border-surface-700/60
+                       flex items-center justify-end px-5 backdrop-blur-sm flex-shrink-0 z-10">
+      <div className="flex items-center gap-2">
+        {/* Notification bell */}
+        <button className="w-8 h-8 rounded-lg flex items-center justify-center
+                           hover:bg-surface-700 text-gray-400 hover:text-gray-200
+                           transition-colors relative">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+        </button>
+
+        {/* Avatar dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu((m) => !m)}
+            className="flex items-center gap-2 pl-3 border-l border-surface-700
+                       hover:text-white transition-colors"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800
+                            flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {(user?.full_name ?? user?.email ?? '?')[0].toUpperCase()}
+            </div>
+            <span className="text-xs text-gray-400 hidden sm:block truncate max-w-[120px]">
+              {user?.full_name ?? user?.email}
+            </span>
+            <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+              <div className="absolute right-0 top-full mt-2 w-48 bg-surface-800 border border-surface-600
+                              rounded-xl shadow-2xl shadow-black/50 z-50 overflow-hidden animate-fade-in">
+                <div className="px-4 py-3 border-b border-surface-700">
+                  <p className="text-xs font-semibold text-white truncate">{user?.full_name ?? 'User'}</p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => { navigate('/dashboard'); setShowMenu(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300
+                             hover:bg-surface-700 hover:text-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => { signOut(); setShowMenu(false) }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-400
+                             hover:bg-rose-900/20 hover:text-rose-300 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Sign Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
+
+export default function DashboardLayout() {
+  return (
+    <div className="flex h-screen bg-surface-900 overflow-hidden">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}
