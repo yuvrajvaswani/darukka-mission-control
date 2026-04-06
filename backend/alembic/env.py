@@ -72,10 +72,14 @@ def do_run_migrations(connection):
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using asyncpg."""
+    _is_remote = not settings.DATABASE_URL.startswith("postgresql+asyncpg://localhost")
+    _connect_args = {"ssl": "require"} if _is_remote else {}
+
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=_connect_args,
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

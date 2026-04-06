@@ -8,12 +8,17 @@ from app.core.config import settings
 
 # ── Engine ────────────────────────────────────────────────────────────────────
 # pool_pre_ping keeps connections healthy after Render/Supabase idle timeouts
+# SSL is passed via connect_args so asyncpg handles it correctly
+_is_remote_db = not settings.DATABASE_URL.startswith("postgresql+asyncpg://localhost")
+_connect_args = {"ssl": "require"} if _is_remote_db else {}
+
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
+    connect_args=_connect_args,
 )
 
 # ── Session factory ───────────────────────────────────────────────────────────
