@@ -18,7 +18,7 @@ services:
 
     # Run Alembic migrations before the new version receives traffic.
     # Render calls preDeployCommand once after build, before the new instance starts.
-    preDeployCommand: alembic upgrade head
+    preDeployCommand: python -m alembic upgrade head
 
     startCommand: gunicorn -c gunicorn.conf.py app.main:app
 
