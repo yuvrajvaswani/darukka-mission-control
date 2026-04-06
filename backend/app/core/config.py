@@ -27,11 +27,15 @@ class Settings(BaseSettings):
     def normalise_db_url(cls, v: str) -> str:
         """Render (and Heroku) emit  postgres://  or  postgresql://
         SQLAlchemy async requires   postgresql+asyncpg://
+        Preserves query string (e.g. ?sslmode=require).
         """
         if v.startswith("postgres://"):
-            return "postgresql+asyncpg://" + v[len("postgres://"):]
-        if v.startswith("postgresql://"):
-            return "postgresql+asyncpg://" + v[len("postgresql://"):]
+            v = "postgresql+asyncpg://" + v[len("postgres://"):]
+        elif v.startswith("postgresql://"):
+            v = "postgresql+asyncpg://" + v[len("postgresql://"):]
+        # Convert sslmode=require to ssl=require for asyncpg
+        if "sslmode=require" in v:
+            v = v.replace("sslmode=require", "ssl=require")
         return v
     # ── Security ──────────────────────────────────────────────────────
     SECRET_KEY: str
