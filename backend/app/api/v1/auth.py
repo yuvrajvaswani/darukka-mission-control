@@ -19,6 +19,7 @@ from app.schemas.auth import (
     TokenResponse,
     UserOut,
 )
+from app.services.onboarding import seed_default_projects
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -38,6 +39,7 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
     )
     db.add(user)
     await db.flush()  # populate id without committing (session handles commit)
+    await seed_default_projects(user.id, db)
     await db.refresh(user)
     return user
 
