@@ -39,7 +39,7 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["*"],
         expose_headers=["X-Request-ID"],
     )
     app.add_middleware(GZipMiddleware, minimum_size=1024)
