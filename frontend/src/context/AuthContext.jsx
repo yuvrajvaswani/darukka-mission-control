@@ -14,11 +14,20 @@ export function AuthProvider({ children }) {
       setLoading(false)
       return
     }
+    // Safety net: never stay on loading screen more than 10s even if backend is down
+    const timeout = setTimeout(() => {
+      logout()
+      setLoading(false)
+    }, 10000)
+
     authApi
       .me()
       .then(({ data }) => setUser(data))
       .catch(() => logout())
-      .finally(() => setLoading(false))
+      .finally(() => {
+        clearTimeout(timeout)
+        setLoading(false)
+      })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const login = async (email, password) => {

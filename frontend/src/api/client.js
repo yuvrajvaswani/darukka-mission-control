@@ -36,7 +36,9 @@ apiClient.interceptors.response.use(
         return apiClient(original)
       } catch {
         useAuthStore.getState().logout()
-        window.location.href = '/login'
+        // Reject so AuthContext .catch() + .finally() run cleanly
+        // Navigation is handled by ProtectedRoute reacting to isAuthenticated = false
+        return Promise.reject(error)
       }
     }
     return Promise.reject(error)
