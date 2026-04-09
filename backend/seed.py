@@ -1,10 +1,13 @@
 """
 Seed the database with sample projects, sites, and analytics data.
 Run from the backend/ directory:
-    python seed.py
+    python seed.py                        # seeds the first user in the DB
+    python seed.py --email you@example.com  # seeds a specific account
+    python seed.py --email you@example.com --force  # re-seed even if data exists
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import random
 from datetime import date, timedelta
@@ -90,22 +93,36 @@ def _gen_analytics(site_id, metric: str, base: float, noise: float, months: int 
     return records
 
 
-async def seed():
+async def seed(email: str | None = None, force: bool = False):
     async with AsyncSessionLocal() as db:
-        # Find first user
-        result = await db.execute(sa.select(User).limit(1))
-        user: User | None = result.scalar_one_or_none()
-        if not user:
-            print("No users found — register an account first, then re-run this script.")
-            return
+        # Find target user
+        if email:
+            result = await db.execute(sa.select(User).where(User.email == email))
+            user: User | None = result.scalar_one_or_none()
+            if not user:
+                print(f"No user found with email: {email}")
+                print("Make sure you have registered that account first.")
+                return
+        else:
+            result = await db.execute(sa.select(User).limit(1))
+            user = result.scalar_one_or_none()
+            if not user:
+                print("No users found — register an account first, then re-run this script.")
+                return
 
         print(f"Seeding data for user: {user.email}")
 
         # Check if already seeded
         proj_check = await db.execute(sa.select(Project).where(Project.owner_id == user.id).limit(1))
         if proj_check.scalar_one_or_none():
-            print("Data already seeded for this user. Skipping.")
-            return
+            if not force:
+                print("Data already seeded for this user. Use --force to reseed.")
+                return
+            print("--force flag set: deleting existing projects for this user and reseeding…")
+            existing = await db.execute(sa.select(Project).where(Project.owner_id == user.id))
+            for p in existing.scalars().all():
+                await db.delete(p)
+            await db.flush()
 
         # ── Projects ────────────────────────────────────────────────────────
         projects = [
@@ -177,4 +194,10 @@ async def seed():
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    parser = argparse.ArgumentParser(description="Seed sample data for a user account.")
+    parser.add_argument("--email", type=str, default=None,
+                        help="Email of the account to seed (defaults to first user in DB)")
+    parser.add_argument("--force", action="store_true",
+                        help="Delete existing seed data and reseed")
+    args = parser.parse_args()
+    asyncio.run(seed(email=args.email, force=args.force))

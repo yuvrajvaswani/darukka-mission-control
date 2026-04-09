@@ -168,7 +168,22 @@ function ProjectCard({ project, onOpen, onMap }) {
   )
 }
 
-function EmptyState({ onNew }) {
+function EmptyState({ onNew, onSeed }) {
+  const [seeding, setSeeding] = useState(false)
+  const [seedError, setSeedError] = useState(null)
+
+  const handleSeed = async () => {
+    setSeeding(true)
+    setSeedError(null)
+    try {
+      await onSeed()
+    } catch (err) {
+      setSeedError(err.response?.data?.detail ?? 'Failed to load sample data')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <div className="w-16 h-16 rounded-2xl bg-surface-700/60 border border-surface-600/40 flex items-center justify-center mb-4">
@@ -179,7 +194,29 @@ function EmptyState({ onNew }) {
       </div>
       <p className="text-gray-300 font-medium">No projects yet</p>
       <p className="text-gray-600 text-sm mt-1 mb-5">Create your first conservation project to get started</p>
-      <button className="btn-primary" onClick={onNew}>Create Project</button>
+      <div className="flex flex-col sm:flex-row gap-3 items-center">
+        <button className="btn-primary" onClick={onNew}>Create Project</button>
+        <button
+          className="btn-ghost text-sm flex items-center gap-2"
+          onClick={handleSeed}
+          disabled={seeding}
+        >
+          {seeding ? (
+            <span className="w-3.5 h-3.5 border border-brand-400 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          )}
+          {seeding ? 'Loading…' : 'Load sample data'}
+        </button>
+      </div>
+      {seedError && (
+        <p className="text-xs text-rose-400 mt-3 bg-rose-900/20 rounded-lg px-3 py-2 border border-rose-800/40 max-w-xs">
+          {seedError}
+        </p>
+      )}
     </div>
   )
 }
@@ -277,6 +314,11 @@ export default function Dashboard() {
   const handleCreated = (project) => {
     setProjects((prev) => [project, ...prev])
     setShowCreate(false)
+  }
+
+  const handleSeed = async () => {
+    const { data } = await projectsApi.seedDemo()
+    setProjects(data)
   }
 
   const counts = useMemo(() => ({
@@ -391,7 +433,7 @@ export default function Dashboard() {
       {loading ? (
         <ProjectsSkeleton />
       ) : projects.length === 0 ? (
-        <EmptyState onNew={() => setShowCreate(true)} />
+        <EmptyState onNew={() => setShowCreate(true)} onSeed={handleSeed} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
