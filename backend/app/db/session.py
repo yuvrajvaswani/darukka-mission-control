@@ -9,7 +9,7 @@ from app.core.config import settings
 # ── Engine ────────────────────────────────────────────────────────────────────
 # pool_pre_ping keeps connections healthy after Render/Supabase idle timeouts
 # SSL is passed via connect_args so asyncpg handles it correctly
-_is_remote_db = not settings.DATABASE_URL.startswith("postgresql+asyncpg://localhost")
+_is_remote_db = "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL
 _connect_args = {"ssl": "require"} if _is_remote_db else {}
 
 engine = create_async_engine(

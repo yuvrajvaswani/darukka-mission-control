@@ -72,7 +72,7 @@ def do_run_migrations(connection):
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using asyncpg."""
-    _is_remote = not settings.DATABASE_URL.startswith("postgresql+asyncpg://localhost")
+    _is_remote = "localhost" not in settings.DATABASE_URL and "127.0.0.1" not in settings.DATABASE_URL
     _connect_args = {"ssl": "require"} if _is_remote else {}
 
     connectable = async_engine_from_config(
